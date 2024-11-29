@@ -25,25 +25,116 @@ class MyEntry {
 
 //Class SkipListPQ
 class SkipListPQ {
+    private static final int NegInf = Integer.MIN_VALUE, PosInf = Integer.MAX_VALUE;
+	private static final String sentinel = "sentinel";
 
+    private int size, h;
     private double alpha;
     private Random rand;
+    private Node s;
+
+    private class Node {
+		Node(int key, String value) {
+			e = new MyEntry(key, value);
+		}
+
+        public String toString() {
+            Node t = this;
+            int countLevel = 1;
+		    while(t.above!=null) {
+                countLevel++;
+                t=t.above;
+            }
+		    
+            return e.getKey() + " " + e.getValue() + " " + countLevel; 
+        }
+		
+		public MyEntry e;
+		public Node next, prev, above, below;
+	}
 
     public SkipListPQ(double alpha) {
         this.alpha = alpha;
         this.rand = new Random();
+        this.size = 2; 
+        this.h = 0;
+
+        s = new Node(NegInf, sentinel);
+        s.next = new Node(PosInf, sentinel);
+        s.next.prev = s;
     }
 
     public int size() {
-	// TO BE COMPLETED       
+        return this.size;
+    }
+
+    public boolean isEmpty() {
+        return this.size<=2;
     }
 
     public MyEntry min() {
-	// TO BE COMPLETED 
+        if(isEmpty()) return null;
+
+	    Node t = s;
+		while(t.below!=null) {
+			t = t.below;
+		}
+		t=t.next;
+
+		return t.e;  
     }
 
-    public int insert(int key, String value) {
-	// TO BE COMPLETED 
+    public int insert(int newKey, String newValue) {    
+        int l = generateEll(alpha, newKey);
+
+        //increase height
+        while(l>=h) {
+            Node newS = new Node(NegInf, sentinel);
+			s.above = newS;
+			newS.below = s;
+			newS.next = new Node(PosInf, sentinel);
+			newS.next.prev = newS;
+			s.next.above = newS.next;
+			newS.next.below = s.next;
+			s = s.above;
+			h++;
+			size+=2;
+        }
+
+        //SkipSearch()
+        int steps = 1;
+        Node t = s;
+        while (l+1<h) {
+            t = t.below;
+            l++;
+        }
+        Node prevLoop = null;
+        do {
+            steps++;
+
+            while (t.next.e.getKey() <= newKey) {
+                t = t.next;
+                steps++;
+            }
+
+            Node oldNext = t.next;
+            Node newNode = new Node(newKey, newValue);
+            t.next = newNode;
+
+            newNode.next = oldNext;
+            oldNext.prev = newNode;
+
+            newNode.above = prevLoop;
+            if(prevLoop!=null) prevLoop.below = newNode;
+
+            prevLoop = newNode;
+            
+            size++;
+            
+            t = t.below;
+        } while (t!=null);
+        
+        return steps;
     }
 
     private int generateEll(double alpha_ , int key) {
@@ -63,11 +154,66 @@ class SkipListPQ {
     }
 
     public MyEntry removeMin() {
-	// TO BE COMPLETED 
+	    if(isEmpty()) return null;
+        
+        Node t = s;
+		while(t.below!=null) {
+			t = t.below;
+		}
+		t=t.next;
+
+        MyEntry e = t.e;
+
+        remove(t);
+
+        //remove useless levels
+        t = s;
+        while(t.below!=null && t.below.next.e.getValue()!=sentinel) {
+            t=t.below;
+            h--;
+        }
+        //right sentinel
+        remove(t.above.next);
+        //left sentinel
+        remove(t.above);
+        s = t;
+
+        return e;
     }
 
+    private void remove(Node n) {
+        if(n==null) return;
+
+        if(n.prev!=null && n.prev!=null) {
+            n.prev.next = n.next;
+            n.next.prev = n.prev;
+        }
+        n.next = null;
+        n.prev = null;
+        remove(n.above);
+        n.above=null;
+        n.below=null;
+        size--;
+    }
+
+    public String toString() {
+	    Node t = s;
+        String str = "";
+        while(t.below!=null) {
+            t = t.below;
+        }
+        t = t.next;
+
+        while (t.e.getValue()!=sentinel) {
+            str += t.toString() + ", ";     
+            t=t.next;
+        }
+
+        return (str.length() > 0) ? "" : str.substring(str.length()-2);
+    } 
+
     public void print() {
-	// TO BE COMPLETED 
+        System.out.println(toString());
     }
 }
 
@@ -86,7 +232,7 @@ public class TestProgram {
             double alpha = Double.parseDouble(firstLine[1]);
             System.out.println(N + " " + alpha);
 
-            SkipListPQ skipList = new SkipListPQ(alpha);
+            SkipListPQ SLPQ = new SkipListPQ(alpha);
 
             for (int i = 0; i < N; i++) {
                 String[] line = br.readLine().split(" ");
@@ -94,16 +240,19 @@ public class TestProgram {
 
                 switch (operation) {
                     case 0:
-			// TO BE COMPLETED 
+			            System.out.println("Min: " + SLPQ.min().getValue());
                         break;
                     case 1:
-			// TO BE COMPLETED 
+			            System.out.println("Rimosso: " + SLPQ.removeMin().getValue()); 
                         break;
                     case 2:
-			// TO BE COMPLETED 
+                        int key = Integer.parseInt(line[1]);
+                        String value = line[2];
+			            SLPQ.insert(key, value); 
+                        System.out.println("Inserito: ("+key+", "+value+")");
                         break;
                     case 3:
-			// TO BE COMPLETED 
+			            SLPQ.print(); 
                         break;
                     default:
                         System.out.println("Invalid operation code");
