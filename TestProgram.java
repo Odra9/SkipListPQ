@@ -17,6 +17,7 @@ class MyEntry {
     public String getValue() {
         return value;
     }
+
     @Override
     public String toString() {
         return key + " " + value;
@@ -38,6 +39,7 @@ class SkipListPQ {
 			e = new MyEntry(key, value);
 		}
 
+        @Override
         public String toString() {
             Node t = this;
             int countLevel = 1;
@@ -45,8 +47,8 @@ class SkipListPQ {
                 countLevel++;
                 t=t.above;
             }
-		    
-            return e.getKey() + " " + e.getValue() + " " + countLevel; 
+		    String str = e.toString() + " " + countLevel;
+            return str; 
         }
 		
 		public MyEntry e;
@@ -122,6 +124,7 @@ class SkipListPQ {
             t.next = newNode;
 
             newNode.next = oldNext;
+            newNode.prev = t;
             oldNext.prev = newNode;
 
             newNode.above = prevLoop;
@@ -172,30 +175,50 @@ class SkipListPQ {
             t=t.below;
             h--;
         }
-        //right sentinel
-        remove(t.above.next);
-        //left sentinel
-        remove(t.above);
         s = t;
+        if(s.above!=null) {
+            remove(s.above.next);
+            remove(s.above);
+            s.above = null;
+        }
+        //right sentinel
+        //remove(t.above.next);
+        //left sentinel
+        //remove(t.above);
+        t.above = null;
+        t.next.above=null;
+        
 
         return e;
     }
 
     private void remove(Node n) {
         if(n==null) return;
-
-        if(n.prev!=null && n.prev!=null) {
+        /*
+        //if(n.prev!=null && n.next!=null) {
             n.prev.next = n.next;
             n.next.prev = n.prev;
-        }
+        //}
         n.next = null;
         n.prev = null;
         remove(n.above);
         n.above=null;
-        n.below=null;
+        n.below=null;*/
+        if(n.e.getValue()!=sentinel) {
+            n.prev.next = n.next;
+            n.next.prev = n.prev;
+        } else {
+            n.prev = null;
+            n.next = null;
+            n.below = null;
+        }
+
+        remove(n.above);
+
         size--;
     }
 
+    @Override
     public String toString() {
 	    Node t = s;
         String str = "";
@@ -209,7 +232,7 @@ class SkipListPQ {
             t=t.next;
         }
 
-        return (str.length() > 0) ? "" : str.substring(str.length()-2);
+        return (str.length() > 0) ? str.substring(0, str.length()-2) : "";
     } 
 
     public void print() {
