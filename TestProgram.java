@@ -58,7 +58,7 @@ class SkipListPQ {
     public SkipListPQ(double alpha) {
         this.alpha = alpha;
         this.rand = new Random();
-        this.size = 2; 
+        this.size = 0; 
         this.h = 0;
 
         s = new Node(NegInf, sentinel);
@@ -71,7 +71,7 @@ class SkipListPQ {
     }
 
     public boolean isEmpty() {
-        return this.size<=2;
+        return this.size<=0;
     }
 
     public MyEntry min() {
@@ -100,15 +100,13 @@ class SkipListPQ {
 			newS.next.below = s.next;
 			s = s.above;
 			h++;
-			size+=2;
         }
 
         //SkipSearch()
         int steps = 1;
         Node t = s;
-        while (l+1<h) {
+        for(int i=h-l;i>=0;i--) {
             t = t.below;
-            l++;
         }
         Node prevLoop = null;
         do {
@@ -132,11 +130,10 @@ class SkipListPQ {
 
             prevLoop = newNode;
             
-            size++;
-            
             t = t.below;
         } while (t!=null);
         
+        size++;
         return steps;
     }
 
@@ -188,7 +185,7 @@ class SkipListPQ {
         t.above = null;
         t.next.above=null;
         
-
+        size--;
         return e;
     }
 
@@ -214,8 +211,6 @@ class SkipListPQ {
         }
 
         remove(n.above);
-
-        size--;
     }
 
     @Override
@@ -232,7 +227,8 @@ class SkipListPQ {
             t=t.next;
         }
 
-        return (str.length() > 0) ? str.substring(0, str.length()-2) : "";
+        return str;
+        //return (str.length() > 0) ? str.substring(0, str.length()-2) : "";
     } 
 
     public void print() {
@@ -257,21 +253,28 @@ public class TestProgram {
 
             SkipListPQ SLPQ = new SkipListPQ(alpha);
 
+            int insN = 0, insSteps = 0;
+            MyEntry min;
             for (int i = 0; i < N; i++) {
                 String[] line = br.readLine().split(" ");
                 int operation = Integer.parseInt(line[0]);
 
                 switch (operation) {
                     case 0:
-			            System.out.println("Min: " + SLPQ.min().getValue());
+			            //System.out.println("Min: " + SLPQ.min().getValue());
+                        min = SLPQ.min();
+                        System.out.println(min.getKey() + " " + min.getValue());
                         break;
                     case 1:
-			            System.out.println("Rimosso: " + SLPQ.removeMin().getValue()); 
+			            //System.out.println("Rimosso: " + SLPQ.removeMin().getValue()); 
+                        min = SLPQ.removeMin();
+                        System.out.println(min.getKey() + " " + min.getValue());
                         break;
                     case 2:
                         int key = Integer.parseInt(line[1]);
                         String value = line[2];
-			            SLPQ.insert(key, value); 
+			            insSteps += SLPQ.insert(key, value); 
+                        insN++;
                         System.out.println("Inserito: ("+key+", "+value+")");
                         break;
                     case 3:
@@ -282,6 +285,8 @@ public class TestProgram {
                         return;
                 }
             }
+
+            System.out.println(alpha + " " + SLPQ.size() + " " + insN + " " + insSteps/insN);
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
