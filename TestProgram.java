@@ -11,9 +11,16 @@ class MyEntry {
         this.key = key;
         this.value = value;
     }
+
+    public MyEntry(MyEntry e) {
+        this.key = e.key;
+        this.value = e.value;
+    }
+
     public Integer getKey() {
         return key;
     }
+
     public String getValue() {
         return value;
     }
@@ -27,7 +34,7 @@ class MyEntry {
 //Class SkipListPQ
 class SkipListPQ {
     private static final int NegInf = Integer.MIN_VALUE, PosInf = Integer.MAX_VALUE;
-	private static final String sentinel = "sentinel";
+    private static final String sentinel = "sentinel";
 
     private int size, h;
     private double alpha;
@@ -42,12 +49,12 @@ class SkipListPQ {
         @Override
         public String toString() {
             Node t = this;
-            int countLevel = 1;
+            int levelT = 0;
 		    while(t.above!=null) {
-                countLevel++;
                 t=t.above;
+                levelT++;
             }
-		    String str = e.toString() + " " + countLevel;
+		    String str = e.toString() + " " + (levelT+1);
             return str; 
         }
 		
@@ -59,11 +66,19 @@ class SkipListPQ {
         this.alpha = alpha;
         this.rand = new Random();
         this.size = 0; 
-        this.h = 0;
+        this.h = 1;
 
+        //level = 1
         s = new Node(NegInf, sentinel);
         s.next = new Node(PosInf, sentinel);
         s.next.prev = s;
+        //level = 0
+        s.below = new Node(NegInf, sentinel);
+        s.below.next = new Node(PosInf, sentinel);
+        s.below.next.prev = s.below;
+        s.below.above = s;
+        s.next.below = s.below.next;
+        s.below.next.above = s.next;
     }
 
     public int size() {
@@ -83,11 +98,17 @@ class SkipListPQ {
 		}
 		t=t.next;
 
-		return t.e;  
+        MyEntry min = new MyEntry(t.e);
+
+        System.out.println(min.getKey() + " " + min.getValue());
+
+		return min;  
     }
 
     public int insert(int newKey, String newValue) {    
+        //System.out.println("H: " + h);
         int l = generateEll(alpha, newKey);
+        //System.out.println(newKey + " " + newValue + " L: " + l);
 
         //increase height
         while(l>=h) {
@@ -102,36 +123,35 @@ class SkipListPQ {
 			h++;
         }
 
-        //SkipSearch()
+        //SkipInsert()
         int steps = 1;
         Node t = s;
-        for(int i=h-l;i>=0;i--) {
-            t = t.below;
-        }
+        int currH = this.h;
         Node prevLoop = null;
-        do {
+        while (t.below!=null) {
+            t = t.below;
+            currH--;
             steps++;
-
             while (t.next.e.getKey() <= newKey) {
                 t = t.next;
                 steps++;
             }
 
-            Node oldNext = t.next;
-            Node newNode = new Node(newKey, newValue);
-            t.next = newNode;
+            if(currH<=l) {
+                Node oldNext = t.next;
+                Node newNode = new Node(newKey, newValue);
+                
+                t.next = newNode;
+                newNode.next = oldNext;
+                newNode.prev = t;
+                oldNext.prev = newNode;
 
-            newNode.next = oldNext;
-            newNode.prev = t;
-            oldNext.prev = newNode;
+                newNode.above = prevLoop;
+                if(prevLoop!=null) prevLoop.below = newNode;
 
-            newNode.above = prevLoop;
-            if(prevLoop!=null) prevLoop.below = newNode;
-
-            prevLoop = newNode;
-            
-            t = t.below;
-        } while (t!=null);
+                prevLoop = newNode;
+            }
+        }
         
         size++;
         return steps;
@@ -162,13 +182,15 @@ class SkipListPQ {
 		}
 		t=t.next;
 
-        MyEntry e = t.e;
+        MyEntry min = new MyEntry(t.e);
+
+        //System.out.println(min.getKey() + " " + min.getValue());
 
         remove(t);
 
-        //remove useless levels
+        //remove excess empty levels
         t = s;
-        while(t.below!=null && t.below.next.e.getValue()!=sentinel) {
+        while(t.below!=null && t.below.next.e.getValue()==sentinel) {
             t=t.below;
             h--;
         }
@@ -177,40 +199,32 @@ class SkipListPQ {
             remove(s.above.next);
             remove(s.above);
             s.above = null;
+            s.next.above = null;
         }
-        //right sentinel
-        //remove(t.above.next);
-        //left sentinel
-        //remove(t.above);
-        t.above = null;
-        t.next.above=null;
         
+        System.gc(); //suggests to the system to free the memory allocated by now removed nodes
+
         size--;
-        return e;
+        return min;
     }
 
+    /* remove makes use of java garbage collector
+       to remove a node we simply delete all reference pointers to it
+       making it unreachable to the rest of the program, then once finished we call the garbage collector in removeMin()
+    */
     private void remove(Node n) {
         if(n==null) return;
-        /*
-        //if(n.prev!=null && n.next!=null) {
-            n.prev.next = n.next;
-            n.next.prev = n.prev;
-        //}
-        n.next = null;
-        n.prev = null;
-        remove(n.above);
-        n.above=null;
-        n.below=null;*/
+
         if(n.e.getValue()!=sentinel) {
             n.prev.next = n.next;
             n.next.prev = n.prev;
-        } else {
-            n.prev = null;
-            n.next = null;
-            n.below = null;
         }
 
+        n.prev = null;
+        n.next = null;
+        n.below = null;
         remove(n.above);
+        n.above = null;
     }
 
     @Override
@@ -263,19 +277,18 @@ public class TestProgram {
                     case 0:
 			            //System.out.println("Min: " + SLPQ.min().getValue());
                         min = SLPQ.min();
-                        System.out.println(min.getKey() + " " + min.getValue());
                         break;
                     case 1:
 			            //System.out.println("Rimosso: " + SLPQ.removeMin().getValue()); 
                         min = SLPQ.removeMin();
-                        System.out.println(min.getKey() + " " + min.getValue());
                         break;
                     case 2:
                         int key = Integer.parseInt(line[1]);
                         String value = line[2];
 			            insSteps += SLPQ.insert(key, value); 
                         insN++;
-                        System.out.println("Inserito: ("+key+", "+value+")");
+                        //System.out.println("Inserito: ("+key+", "+value+")");
+                        //System.out.println("InsSteps: " + insSteps + ", " + "InsN: " + insN);
                         break;
                     case 3:
 			            SLPQ.print(); 
@@ -286,7 +299,7 @@ public class TestProgram {
                 }
             }
 
-            System.out.println(alpha + " " + SLPQ.size() + " " + insN + " " + insSteps/insN);
+            System.out.println(alpha + " " + SLPQ.size() + " " + insN + " " + (float)insSteps/insN);
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
