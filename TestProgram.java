@@ -184,8 +184,6 @@ class SkipListPQ {
 
         MyEntry min = new MyEntry(t.e);
 
-        //System.out.println(min.getKey() + " " + min.getValue());
-
         remove(t);
 
         //remove excess empty levels
@@ -242,7 +240,6 @@ class SkipListPQ {
         }
 
         return str;
-        //return (str.length() > 0) ? str.substring(0, str.length()-2) : "";
     } 
 
     public void print() {
@@ -275,11 +272,9 @@ public class TestProgram {
 
                 switch (operation) {
                     case 0:
-			            //System.out.println("Min: " + SLPQ.min().getValue());
                         min = SLPQ.min();
                         break;
                     case 1:
-			            //System.out.println("Rimosso: " + SLPQ.removeMin().getValue()); 
                         min = SLPQ.removeMin();
                         break;
                     case 2:
@@ -287,8 +282,6 @@ public class TestProgram {
                         String value = line[2];
 			            insSteps += SLPQ.insert(key, value); 
                         insN++;
-                        //System.out.println("Inserito: ("+key+", "+value+")");
-                        //System.out.println("InsSteps: " + insSteps + ", " + "InsN: " + insN);
                         break;
                     case 3:
 			            SLPQ.print(); 
@@ -299,7 +292,7 @@ public class TestProgram {
                 }
             }
 
-            System.out.println(alpha + " " + SLPQ.size() + " " + insN + " " + (float)insSteps/insN);
+            System.out.println(alpha + " " + SLPQ.size() + " " + insN + " " + (double)insSteps/insN);
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
