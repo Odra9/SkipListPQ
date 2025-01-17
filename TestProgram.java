@@ -106,9 +106,9 @@ class SkipListPQ {
     }
 
     public int insert(int newKey, String newValue) {    
-        //System.out.println("H: " + h);
         int l = generateEll(alpha, newKey);
-        //System.out.println(newKey + " " + newValue + " L: " + l);
+
+        int oldH = h;
 
         //increase height
         while(l>=h) {
@@ -130,8 +130,8 @@ class SkipListPQ {
         Node prevLoop = null;
         while (t.below!=null) {
             t = t.below;
+            if (currH <= oldH) steps++;     //new levels should not be counted
             currH--;
-            steps++;
             while (t.next.e.getKey() <= newKey) {
                 t = t.next;
                 steps++;
