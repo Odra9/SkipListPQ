@@ -264,7 +264,7 @@ public class TestProgram {
 
             SkipListPQ SLPQ = new SkipListPQ(alpha);
 
-            int insN = 0, insSteps = 0;
+            long insN = 0, insSteps = 0;
             MyEntry min;
             for (int i = 0; i < N; i++) {
                 String[] line = br.readLine().split(" ");
